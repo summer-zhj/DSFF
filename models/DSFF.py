@@ -266,12 +266,12 @@ class Model(nn.Module):
                 self.head_nf * configs.enc_in, configs.num_class)
 
     def forecast(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
-        # means = x_enc.mean(1, keepdim=True).detach()
-        # x_enc = x_enc - means
-        # stdev = torch.sqrt(
-        #     torch.var(x_enc, dim=1, keepdim=True, unbiased=False) + 1e-5)
-        # x_enc /= stdev
-        x_enc = self.revin(x_enc, 'norm')
+        means = x_enc.mean(1, keepdim=True).detach()
+        x_enc = x_enc - means
+        stdev = torch.sqrt(
+            torch.var(x_enc, dim=1, keepdim=True, unbiased=False) + 1e-5)
+        x_enc /= stdev
+        #x_enc = self.revin(x_enc, 'norm')
 
         # do patching and embedding
         x_enc = x_enc.permute(0, 2, 1)
@@ -296,11 +296,11 @@ class Model(nn.Module):
         # Decoder
         dec_out = self.head(enc_out)  # z: [bs x nvars x target_window]
         dec_out = dec_out.permute(0, 2, 1)
-        # dec_out = dec_out * \
-        #     (stdev[:, 0, :].unsqueeze(1).repeat(1, self.pred_len, 1))
-        # dec_out = dec_out + \
-        #     (means[:, 0, :].unsqueeze(1).repeat(1, self.pred_len, 1))
-        dec_out = self.revin(dec_out, 'denorm')
+        dec_out = dec_out * \
+            (stdev[:, 0, :].unsqueeze(1).repeat(1, self.pred_len, 1))
+        dec_out = dec_out + \
+            (means[:, 0, :].unsqueeze(1).repeat(1, self.pred_len, 1))
+        #dec_out = self.revin(dec_out, 'denorm')
         return dec_out
 
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
